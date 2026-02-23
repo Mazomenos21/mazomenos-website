@@ -1,9 +1,2 @@
-<<<<<<< ours
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-|||||||
-=======
 onlyBuiltDependencies:
   - esbuild
->>>>>>> theirs

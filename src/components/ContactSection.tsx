@@ -12,13 +12,13 @@ const ContactSection = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-2">
-            ¿Hablamos<span className="text-gradient">?</span>
+            Shall we talk<span className="text-gradient">?</span>
           </h2>
           <div className="w-16 h-1 bg-primary rounded-full mx-auto mb-8" />
 
           <p className="text-muted-foreground mb-10 max-w-lg mx-auto">
-            Estoy abierto a nuevas oportunidades, colaboraciones y proyectos interesantes. 
-            Conectemos a través de mis redes profesionales.
+            I'm open to new opportunities, collaborations, and exciting projects.
+            Let's connect through my professional networks.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -29,7 +29,7 @@ const ContactSection = () => {
               className="group inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-primary text-primary-foreground font-semibold hover:opacity-90 transition-all duration-300"
             >
               <Linkedin className="w-5 h-5" />
-              Conectar en LinkedIn
+              Connect on LinkedIn
               <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </a>
             <a
@@ -39,7 +39,7 @@ const ContactSection = () => {
               className="group inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-secondary text-secondary-foreground font-semibold hover:bg-accent transition-all duration-300"
             >
               <Github className="w-5 h-5" />
-              Ver GitHub
+              View GitHub
               <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </a>
           </div>
@@ -49,7 +49,7 @@ const ContactSection = () => {
       {/* Footer */}
       <div className="mt-24 pt-8 border-t border-border text-center">
         <p className="text-sm text-muted-foreground">
-          © 2025 Stiven Mazo · Hecho con pasión desde Medellín 🇨🇴
+          © 2025 Stiven Mazo · Made with passion from Medellín 🇨🇴
         </p>
       </div>
     </section>
