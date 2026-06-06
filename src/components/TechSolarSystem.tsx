@@ -162,29 +162,44 @@ const useSVGTexture = (url: string): THREE.Texture | null => {
     const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
     useEffect(() => {
+        return () => {
+            texture?.dispose();
+        };
+    }, [texture]);
+
+    useEffect(() => {
         let active = true;
+
+        // Clear previous texture while loading a new URL.
+        setTexture(null);
+
+        const size = 128;
         const canvas = document.createElement("canvas");
-        canvas.width = 128;
-        canvas.height = 128;
+        canvas.width = size;
+        canvas.height = size;
         const ctx = canvas.getContext("2d")!;
 
         const img = new Image();
         img.crossOrigin = "anonymous";
         img.onload = () => {
             if (!active) return;
-            ctx.clearRect(0, 0, 128, 128);
-            ctx.drawImage(img, 0, 0, 128, 128);
+            ctx.clearRect(0, 0, size, size);
+            ctx.drawImage(img, 0, 0, size, size);
             const tex = new THREE.CanvasTexture(canvas);
             tex.needsUpdate = true;
             setTexture(tex);
         };
         img.onerror = () => {
+            if (!active) return;
             console.warn(`Failed to load SVG: ${url}`);
+            setTexture(null);
         };
         img.src = url;
 
         return () => {
             active = false;
+            img.onload = null;
+            img.onerror = null;
         };
     }, [url]);
 
