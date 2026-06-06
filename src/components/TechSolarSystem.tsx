@@ -1,8 +1,7 @@
-import {useRef, useMemo, useState, Suspense} from "react";
-import {Canvas, useFrame, useLoader} from "@react-three/fiber";
+import {useRef, useMemo, useState, useEffect} from "react";
+import {Canvas, useFrame} from "@react-three/fiber";
 import {Stars, OrbitControls, Line, Billboard} from "@react-three/drei";
 import * as THREE from "three";
-import {TextureLoader} from "three";
 import {motion} from "framer-motion";
 
 // ---------------------------------------------------------------------------
@@ -155,6 +154,44 @@ const useGlowTexture = () =>
     }, []);
 
 // ---------------------------------------------------------------------------
+// SVG TEXTURE — rasteriza SVG a CanvasTexture (Three.js TextureLoader no
+// maneja SVGs de forma confiable, quedan invisibles en WebGL).
+// ---------------------------------------------------------------------------
+
+const useSVGTexture = (url: string): THREE.Texture | null => {
+    const [texture, setTexture] = useState<THREE.Texture | null>(null);
+
+    useEffect(() => {
+        let active = true;
+        const canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext("2d")!;
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            if (!active) return;
+            ctx.clearRect(0, 0, 128, 128);
+            ctx.drawImage(img, 0, 0, 128, 128);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.needsUpdate = true;
+            setTexture(tex);
+        };
+        img.onerror = () => {
+            console.warn(`Failed to load SVG: ${url}`);
+        };
+        img.src = url;
+
+        return () => {
+            active = false;
+        };
+    }, [url]);
+
+    return texture;
+};
+
+// ---------------------------------------------------------------------------
 // TECH PLANET — esfera emisiva + glow aditivo + sprite de logo
 // ---------------------------------------------------------------------------
 
@@ -173,7 +210,7 @@ const TechPlanet = ({logo, radius, angle, color, size}: TechPlanetProps) => {
     const initialAngle = useRef(angle);
     const speed = 0.28 / Math.sqrt(radius); // 3ª ley de Kepler
 
-    const logoTex = useLoader(TextureLoader, logo);
+    const logoTex = useSVGTexture(logo);
     const glowTex = useGlowTexture();
     const glowColor = useMemo(() => new THREE.Color(color), [color]);
 
@@ -217,18 +254,20 @@ const TechPlanet = ({logo, radius, angle, color, size}: TechPlanetProps) => {
                 </mesh>
             </Billboard>
 
-            {/* Logo SVG como sprite siempre mirando a la cámara */}
-            <Billboard>
-                <mesh position={[0, 0, size + 0.02]}>
-                    <planeGeometry args={[size * 2.2, size * 2.2]}/>
-                    <meshBasicMaterial
-                        map={logoTex}
-                        transparent
-                        alphaTest={0.05}
-                        depthWrite={false}
-                    />
-                </mesh>
-            </Billboard>
+            {/* Logo SVG rasterizado como sprite siempre mirando a la cámara */}
+            {logoTex && (
+                <Billboard>
+                    <mesh position={[0, 0, size + 0.02]}>
+                        <planeGeometry args={[size * 2.2, size * 2.2]}/>
+                        <meshBasicMaterial
+                            map={logoTex}
+                            transparent
+                            alphaTest={0.05}
+                            depthWrite={false}
+                        />
+                    </mesh>
+                </Billboard>
+            )}
         </group>
     );
 };
@@ -366,22 +405,20 @@ const SolarSystemScene = () => (
         {Object.entries(techData).map(([category, data], catIdx) => (
             <group key={category} rotation={[data.orbitTilt, catIdx * 0.35, 0]}>
                 <OrbitRing radius={data.radius} color={data.color}/>
-                <Suspense fallback={null}>
-                    {data.items.map((tech, i) => {
-                        const size = 0.3 + ((i * 13 + catIdx * 7) % 10) / 10 * 0.2;
-                        return (
-                            <TechPlanet
-                                key={tech.name}
-                                name={tech.name}
-                                logo={tech.logo}
-                                radius={data.radius}
-                                angle={(i / data.items.length) * Math.PI * 2}
-                                color={data.color}
-                                size={size}
-                            />
-                        );
-                    })}
-                </Suspense>
+                {data.items.map((tech, i) => {
+                    const size = 0.3 + ((i * 13 + catIdx * 7) % 10) / 10 * 0.2;
+                    return (
+                        <TechPlanet
+                            key={tech.name}
+                            name={tech.name}
+                            logo={tech.logo}
+                            radius={data.radius}
+                            angle={(i / data.items.length) * Math.PI * 2}
+                            color={data.color}
+                            size={size}
+                        />
+                    );
+                })}
             </group>
         ))}
 
