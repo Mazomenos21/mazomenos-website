@@ -1,6 +1,6 @@
 import {useRef, useMemo, useState, useEffect} from "react";
 import {Canvas, useFrame} from "@react-three/fiber";
-import {Stars, OrbitControls, Line, Billboard} from "@react-three/drei";
+import {Stars, OrbitControls, Line, Billboard, Text} from "@react-three/drei";
 import * as THREE from "three";
 import {motion} from "framer-motion";
 
@@ -29,10 +29,7 @@ const techData = {
             },
             {name: "R", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/r/r-original.svg"},
 
-            {
-                name: "PowerShell",
-                logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/powershell/powershell-original.svg"
-            },
+            {name: "C#", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/csharp/csharp-original.svg"},
         ],
         radius: 4,
         orbitTilt: 0.08,
@@ -53,6 +50,7 @@ const techData = {
                 name: "SQLite",
                 logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sqlite/sqlite-original.svg"
             },
+            {name: "Databricks", logo: "https://cdn.simpleicons.org/databricks"},
         ],
         radius: 7,
         orbitTilt: 0.15,
@@ -84,6 +82,9 @@ const techData = {
                 logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/npm/npm-original-wordmark.svg"
             },
             {name: "Next.js", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original.svg"},
+            {name: "Streamlit", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/streamlit/streamlit-original.svg"},
+            {name: "Laravel", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/laravel/laravel-original.svg"},
+            {name: "Angular", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/angular/angular-original.svg"},
         ],
         radius: 10,
         orbitTilt: 0.05,
@@ -108,6 +109,8 @@ const techData = {
                 name: "Arduino",
                 logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/arduino/arduino-original.svg"
             },
+            {name: "AWS", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-original-wordmark.svg"},
+            {name: "Dokploy", logo: "https://raw.githubusercontent.com/Dokploy/dokploy/refs/heads/main/apps/dokploy/public/logo.svg"},
         ],
         radius: 13,
         orbitTilt: 0.12,
@@ -219,7 +222,7 @@ interface TechPlanetProps {
     size: number;
 }
 
-const TechPlanet = ({logo, radius, angle, color, size}: TechPlanetProps) => {
+const TechPlanet = ({name, logo, radius, angle, color, size}: TechPlanetProps) => {
     const groupRef = useRef<THREE.Group>(null);
     const glowRef = useRef<THREE.Mesh>(null);
     const initialAngle = useRef(angle);
@@ -283,6 +286,18 @@ const TechPlanet = ({logo, radius, angle, color, size}: TechPlanetProps) => {
                     </mesh>
                 </Billboard>
             )}
+
+            {/* Etiqueta del planeta */}
+            <Text
+                position={[0, -size * 1.8, 0]}
+                fontSize={size * 0.5}
+                color={color}
+                anchorX="center"
+                anchorY="top"
+                billboard
+            >
+                {name}
+            </Text>
         </group>
     );
 };
