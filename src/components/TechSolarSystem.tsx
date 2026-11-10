@@ -1,8 +1,7 @@
-import {useRef, useMemo, useState, Suspense} from "react";
-import {Canvas, useFrame, useLoader} from "@react-three/fiber";
-import {Stars, OrbitControls, Line, Billboard} from "@react-three/drei";
+import {useRef, useMemo, useState, useEffect} from "react";
+import {Canvas, useFrame} from "@react-three/fiber";
+import {Stars, OrbitControls, Line, Billboard, Text} from "@react-three/drei";
 import * as THREE from "three";
-import {TextureLoader} from "three";
 import {motion} from "framer-motion";
 
 // ---------------------------------------------------------------------------
@@ -30,10 +29,7 @@ const techData = {
             },
             {name: "R", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/r/r-original.svg"},
 
-            {
-                name: "PowerShell",
-                logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/powershell/powershell-original.svg"
-            },
+            {name: "C#", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/csharp/csharp-original.svg"},
         ],
         radius: 4,
         orbitTilt: 0.08,
@@ -54,6 +50,7 @@ const techData = {
                 name: "SQLite",
                 logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/sqlite/sqlite-original.svg"
             },
+            {name: "Databricks", logo: "https://cdn.simpleicons.org/databricks"},
         ],
         radius: 7,
         orbitTilt: 0.15,
@@ -85,6 +82,9 @@ const techData = {
                 logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/npm/npm-original-wordmark.svg"
             },
             {name: "Next.js", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original.svg"},
+            {name: "Streamlit", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/streamlit/streamlit-original.svg"},
+            {name: "Laravel", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/laravel/laravel-original.svg"},
+            {name: "Angular", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/angular/angular-original.svg"},
         ],
         radius: 10,
         orbitTilt: 0.05,
@@ -109,6 +109,8 @@ const techData = {
                 name: "Arduino",
                 logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/arduino/arduino-original.svg"
             },
+            {name: "AWS", logo: "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-original-wordmark.svg"},
+            {name: "Dokploy", logo: "https://raw.githubusercontent.com/Dokploy/dokploy/refs/heads/main/apps/dokploy/public/logo.svg"},
         ],
         radius: 13,
         orbitTilt: 0.12,
@@ -155,6 +157,59 @@ const useGlowTexture = () =>
     }, []);
 
 // ---------------------------------------------------------------------------
+// SVG TEXTURE — rasteriza SVG a CanvasTexture (Three.js TextureLoader no
+// maneja SVGs de forma confiable, quedan invisibles en WebGL).
+// ---------------------------------------------------------------------------
+
+const useSVGTexture = (url: string): THREE.Texture | null => {
+    const [texture, setTexture] = useState<THREE.Texture | null>(null);
+
+    useEffect(() => {
+        return () => {
+            texture?.dispose();
+        };
+    }, [texture]);
+
+    useEffect(() => {
+        let active = true;
+
+        // Clear previous texture while loading a new URL.
+        setTexture(null);
+
+        const size = 128;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            if (!active) return;
+            ctx.clearRect(0, 0, size, size);
+            ctx.drawImage(img, 0, 0, size, size);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.needsUpdate = true;
+            setTexture(tex);
+        };
+        img.onerror = () => {
+            if (!active) return;
+            console.warn(`Failed to load SVG: ${url}`);
+            setTexture(null);
+        };
+        img.src = url;
+
+        return () => {
+            active = false;
+            img.onload = null;
+            img.onerror = null;
+        };
+    }, [url]);
+
+    return texture;
+};
+
+// ---------------------------------------------------------------------------
 // TECH PLANET — esfera emisiva + glow aditivo + sprite de logo
 // ---------------------------------------------------------------------------
 
@@ -167,13 +222,13 @@ interface TechPlanetProps {
     size: number;
 }
 
-const TechPlanet = ({logo, radius, angle, color, size}: TechPlanetProps) => {
+const TechPlanet = ({name, logo, radius, angle, color, size}: TechPlanetProps) => {
     const groupRef = useRef<THREE.Group>(null);
     const glowRef = useRef<THREE.Mesh>(null);
     const initialAngle = useRef(angle);
     const speed = 0.28 / Math.sqrt(radius); // 3ª ley de Kepler
 
-    const logoTex = useLoader(TextureLoader, logo);
+    const logoTex = useSVGTexture(logo);
     const glowTex = useGlowTexture();
     const glowColor = useMemo(() => new THREE.Color(color), [color]);
 
@@ -217,18 +272,32 @@ const TechPlanet = ({logo, radius, angle, color, size}: TechPlanetProps) => {
                 </mesh>
             </Billboard>
 
-            {/* Logo SVG como sprite siempre mirando a la cámara */}
-            <Billboard>
-                <mesh position={[0, 0, size + 0.02]}>
-                    <planeGeometry args={[size * 2.2, size * 2.2]}/>
-                    <meshBasicMaterial
-                        map={logoTex}
-                        transparent
-                        alphaTest={0.05}
-                        depthWrite={false}
-                    />
-                </mesh>
-            </Billboard>
+            {/* Logo SVG rasterizado como sprite siempre mirando a la cámara */}
+            {logoTex && (
+                <Billboard>
+                    <mesh position={[0, 0, size + 0.02]}>
+                        <planeGeometry args={[size * 2.2, size * 2.2]}/>
+                        <meshBasicMaterial
+                            map={logoTex}
+                            transparent
+                            alphaTest={0.05}
+                            depthWrite={false}
+                        />
+                    </mesh>
+                </Billboard>
+            )}
+
+            {/* Etiqueta del planeta */}
+            <Text
+                position={[0, -size * 1.8, 0]}
+                fontSize={size * 0.5}
+                color={color}
+                anchorX="center"
+                anchorY="top"
+                billboard
+            >
+                {name}
+            </Text>
         </group>
     );
 };
@@ -366,22 +435,20 @@ const SolarSystemScene = () => (
         {Object.entries(techData).map(([category, data], catIdx) => (
             <group key={category} rotation={[data.orbitTilt, catIdx * 0.35, 0]}>
                 <OrbitRing radius={data.radius} color={data.color}/>
-                <Suspense fallback={null}>
-                    {data.items.map((tech, i) => {
-                        const size = 0.3 + ((i * 13 + catIdx * 7) % 10) / 10 * 0.2;
-                        return (
-                            <TechPlanet
-                                key={tech.name}
-                                name={tech.name}
-                                logo={tech.logo}
-                                radius={data.radius}
-                                angle={(i / data.items.length) * Math.PI * 2}
-                                color={data.color}
-                                size={size}
-                            />
-                        );
-                    })}
-                </Suspense>
+                {data.items.map((tech, i) => {
+                    const size = 0.3 + ((i * 13 + catIdx * 7) % 10) / 10 * 0.2;
+                    return (
+                        <TechPlanet
+                            key={tech.name}
+                            name={tech.name}
+                            logo={tech.logo}
+                            radius={data.radius}
+                            angle={(i / data.items.length) * Math.PI * 2}
+                            color={data.color}
+                            size={size}
+                        />
+                    );
+                })}
             </group>
         ))}
 
